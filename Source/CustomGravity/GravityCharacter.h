@@ -43,6 +43,8 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void SetTargetGravity(const FVector direction);
 
-	/*UFUNCTION(BlueprintCallable)
-	void SetTargetGravityActor(const AActor* actor);*/
+	UFUNCTION(BlueprintCallable)
+	void SetTargetGravityActor(AActor* actor, bool is_outward);
+	UFUNCTION(BlueprintCallable)
+	AActor* GetTargetGravityActor();
 };

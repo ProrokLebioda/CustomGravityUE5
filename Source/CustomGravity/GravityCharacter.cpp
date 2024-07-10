@@ -34,14 +34,32 @@ void AGravityCharacter::Tick(float DeltaTime)
 	{
 		if (TargetGravityActor != nullptr)
 		{
-			auto actor_location = GetActorLocation();
-			auto target_location = TargetGravityActor->GetActorLocation();
-			TargetGravityDirection = target_location - actor_location;
-			TargetGravityDirection.Normalize();
-		
 			// For Cylinder objects there is a special case
 			if (IsOutward)
 			{
+				auto actor_location = GetActorLocation();
+
+				// Not sure which way is faster: FMath of UKismetMathLibrary, choose one
+				/*auto target_location = FMath::ClosestPointOnInfiniteLine(TargetGravityActor->GetActorLocation() - TargetGravityActor->GetActorUpVector() * 10000.0f,
+					TargetGravityActor->GetActorLocation() + TargetGravityActor->GetActorUpVector() * 10000.0f,
+					actor_location);*/
+
+				auto target_location = UKismetMathLibrary::FindClosestPointOnLine(actor_location, TargetGravityActor->GetActorLocation(), TargetGravityActor->GetActorUpVector());
+				
+				//auto target_location = TargetGravityActor->GetActorLocation();
+				// We want it to go outwards
+				TargetGravityDirection = (target_location - actor_location) * -1;
+				TargetGravityDirection.Normalize();
+				MovementComponent->SetGravityDirection(FMath::Lerp(MovementComponent->GetGravityDirection(), TargetGravityDirection, LerpAlpha));
+			}
+			else
+			{
+				auto actor_location = GetActorLocation();
+				auto target_location = TargetGravityActor->GetActorLocation();
+				TargetGravityDirection = target_location - actor_location;
+				TargetGravityDirection.Normalize();
+
+				MovementComponent->SetGravityDirection(FMath::Lerp(MovementComponent->GetGravityDirection(), TargetGravityDirection, LerpAlpha));
 			}
 		}
 		else
@@ -66,5 +84,22 @@ void AGravityCharacter::SetTargetGravity(const FVector direction)
 		//MovementComponent->SetGravityDirection(direction);
 		TargetGravityDirection = direction;
 	}
+}
+
+void AGravityCharacter::SetTargetGravityActor(AActor* actor, bool is_outward)
+{
+	TargetGravityActor = actor;
+	IsOutward = is_outward;
+	// Currently used to reset gravity to downward. 
+	// Perhaps in near future it should use saved previous_gravity_direction to revert on exit, but there could be some issues with that as well
+	if (!actor)
+	{
+		SetTargetGravity(FVector::DownVector);
+	}
+}
+
+AActor* AGravityCharacter::GetTargetGravityActor()
+{
+	return TargetGravityActor;
 }
 
